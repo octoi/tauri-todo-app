@@ -1,0 +1,80 @@
+use rusqlite::Connection;
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+pub struct TodoType {
+    pub id: i32,
+    pub title: String,
+    pub done: String,
+    pub assigned_at: String,
+    pub created_at: String,
+}
+
+pub fn create(
+    db: &Connection,
+    title: String,
+    done: String,
+    assigned_at: String,
+    created_at: String,
+) -> Result<i64, String> {
+    match db.execute(
+        "INSERT INTO Todo (title, done, assigned_at, created_at) VALUES (?1, ?2, ?3, ?4)", 
+        &[&title, &done, &assigned_at, &created_at]
+    ) {
+        Ok(_) => {
+            let id = db.last_insert_rowid();
+            return Ok(id);
+        }
+        Err(_) => return Err(String::from("Failed to save data")),
+    }
+}
+
+pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
+    let mut todo_vec: Vec<TodoType> = Vec::new();
+
+    let mut sql_query = match db.prepare("SELECT * FROM Todo") {
+        Ok(query) => query,
+        Err(_) => return Err(String::from("Failed to load todos"))
+    };
+
+    let todo_iter = match sql_query.query_map([], |row| {
+        Ok(TodoType {
+            id: row.get(0)?,
+            title: row.get(1)?,
+            done: row.get(2)?,
+            assigned_at: row.get(3)?,
+            created_at: row.get(4)?,
+        })
+    }) {
+        Ok(todo_iter) => todo_iter,
+        Err(_) => return Err(String::from("Failed to load todos"))
+    };
+
+    for todo in todo_iter {
+        match todo {
+            Ok(todo_data) => todo_vec.push(todo_data),
+            Err(_) => continue,
+        }
+    }
+
+    Ok(todo_vec)
+}
+
+
+pub fn update(db: &Connection, id: i32, title: String, done: String, assigned_at: String) -> Result<(), String> {
+    let id = format!("{}", id);
+
+    match db.execute("UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)", &[&title, &done, &assigned_at, &id]) {
+        Ok(_) => return Ok(()),
+        Err(_) => return Err(String::from("Failed to update todo")),
+    };
+}
+
+pub fn delete(db: &Connection, id: i32) -> Result<(), String> {
+    let id = format!("{}", id);
+
+    match db.execute("DELETE FROM Todo WHERE id=(?1)", &[&id]) {
+        Ok(_) => return Ok(()),
+        Err(_) => return Err(String::from("Failed to delete todo")),
+    };
+}
