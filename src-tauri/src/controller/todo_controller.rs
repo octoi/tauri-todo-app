@@ -9,13 +9,19 @@ pub fn read_todos() -> Result<Vec<TodoType>, String> {
 }
 
 #[tauri::command]
-pub fn add_todo(title: String, assigned_at: String, created_at: String) -> Result<i64, String> {
+pub fn add_todo(title: String, assigned_at: i32, created_at: i32) -> Result<i64, String> {
     let db = init_db()?;
-    todo_model::create(&db, title, false, assigned_at, created_at)
+    todo_model::create(
+        &db, 
+        title, 
+        false, 
+        assigned_at.to_string(), 
+        created_at.to_string()
+    )
 }
 
 #[tauri::command]
-pub fn update_todo(id: i32, title: String, done: bool, assigned_at: String) -> Result<(), String> {
+pub fn update_todo(id: i32, title: String, done: bool, assigned_at: i32) -> Result<(), String> {
     let db = init_db()?;
     todo_model::update(&db, id, title, done, assigned_at)
 }

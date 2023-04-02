@@ -6,8 +6,8 @@ pub struct TodoType {
     pub id: i32,
     pub title: String,
     pub done: bool,
-    pub assigned_at: String,
-    pub created_at: String,
+    pub assigned_at: i32,
+    pub created_at: i32,
 }
 
 pub fn create(
@@ -41,13 +41,15 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
 
     let todo_iter = match sql_query.query_map([], |row| {
         let done: String = row.get(2)?;
+        let assigned_at: String = row.get(3)?;
+        let created_at: String = row.get(4)?;
 
         Ok(TodoType {
             id: row.get(0)?,
             title: row.get(1)?,
             done: done.to_lowercase() == "true",
-            assigned_at: row.get(3)?,
-            created_at: row.get(4)?,
+            assigned_at: assigned_at.parse().unwrap(),
+            created_at: created_at.parse().unwrap(),
         })
     }) {
         Ok(todo_iter) => todo_iter,
@@ -64,11 +66,11 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
     Ok(todo_vec)
 }
 
-pub fn update(db: &Connection, id: i32, title: String, done: bool, assigned_at: String) -> Result<(), String> {
+pub fn update(db: &Connection, id: i32, title: String, done: bool, assigned_at: i32) -> Result<(), String> {
     let id = format!("{}", id);
     let done = format!("{}", done);
 
-    match db.execute("UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)", &[&title, &done, &assigned_at, &id]) {
+    match db.execute("UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)", &[&title, &done, &assigned_at.to_string(), &id]) {
         Ok(_) => return Ok(()),
         Err(_) => return Err(String::from("Failed to update todo")),
     };
