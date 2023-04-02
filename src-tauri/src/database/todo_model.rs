@@ -5,7 +5,7 @@ use serde::Serialize;
 pub struct TodoType {
     pub id: i32,
     pub title: String,
-    pub done: String,
+    pub done: bool,
     pub assigned_at: String,
     pub created_at: String,
 }
@@ -13,10 +13,12 @@ pub struct TodoType {
 pub fn create(
     db: &Connection,
     title: String,
-    done: String,
+    done: bool,
     assigned_at: String,
     created_at: String,
 ) -> Result<i64, String> {
+    let done = format!("{}", done);
+
     match db.execute(
         "INSERT INTO Todo (title, done, assigned_at, created_at) VALUES (?1, ?2, ?3, ?4)", 
         &[&title, &done, &assigned_at, &created_at]
@@ -38,10 +40,12 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
     };
 
     let todo_iter = match sql_query.query_map([], |row| {
+        let done: String = row.get(2)?;
+
         Ok(TodoType {
             id: row.get(0)?,
             title: row.get(1)?,
-            done: row.get(2)?,
+            done: done.to_lowercase() == "true",
             assigned_at: row.get(3)?,
             created_at: row.get(4)?,
         })
@@ -60,9 +64,9 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
     Ok(todo_vec)
 }
 
-
-pub fn update(db: &Connection, id: i32, title: String, done: String, assigned_at: String) -> Result<(), String> {
+pub fn update(db: &Connection, id: i32, title: String, done: bool, assigned_at: String) -> Result<(), String> {
     let id = format!("{}", id);
+    let done = format!("{}", done);
 
     match db.execute("UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)", &[&title, &done, &assigned_at, &id]) {
         Ok(_) => return Ok(()),
