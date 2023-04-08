@@ -20,8 +20,8 @@ pub fn create(
     let done = format!("{}", done);
 
     match db.execute(
-        "INSERT INTO Todo (title, done, assigned_at, created_at) VALUES (?1, ?2, ?3, ?4)", 
-        &[&title, &done, &assigned_at, &created_at]
+        "INSERT INTO Todo (title, done, assigned_at, created_at) VALUES (?1, ?2, ?3, ?4)",
+        &[&title, &done, &assigned_at, &created_at],
     ) {
         Ok(_) => {
             let id = db.last_insert_rowid();
@@ -36,7 +36,7 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
 
     let mut sql_query = match db.prepare("SELECT * FROM Todo") {
         Ok(query) => query,
-        Err(_) => return Err(String::from("Failed to load todos"))
+        Err(_) => return Err(String::from("Failed to load todos")),
     };
 
     let todo_iter = match sql_query.query_map([], |row| {
@@ -53,7 +53,7 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
         })
     }) {
         Ok(todo_iter) => todo_iter,
-        Err(_) => return Err(String::from("Failed to load todos"))
+        Err(_) => return Err(String::from("Failed to load todos")),
     };
 
     for todo in todo_iter {
@@ -66,11 +66,20 @@ pub fn read_all(db: &Connection) -> Result<Vec<TodoType>, String> {
     Ok(todo_vec)
 }
 
-pub fn update(db: &Connection, id: i32, title: String, done: bool, assigned_at: i32) -> Result<(), String> {
+pub fn update(
+    db: &Connection,
+    id: i32,
+    title: String,
+    done: bool,
+    assigned_at: String,
+) -> Result<(), String> {
     let id = format!("{}", id);
     let done = format!("{}", done);
 
-    match db.execute("UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)", &[&title, &done, &assigned_at.to_string(), &id]) {
+    match db.execute(
+        "UPDATE Todo SET title=(?1), done=(?2), assigned_at=(?3) WHERE id=(?4)",
+        &[&title, &done, &assigned_at.to_string(), &id],
+    ) {
         Ok(_) => return Ok(()),
         Err(_) => return Err(String::from("Failed to update todo")),
     };
